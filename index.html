@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paraná Financiados</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c24;
+    --bg3: #1e2330;
+    --border: #2a2f3d;
+    --border2: #3a4055;
+    --text: #e8eaf0;
+    --text2: #9aa0b4;
+    --text3: #5c6278;
+    --accent: #4f7dfc;
+    --accent-bg: #1a2445;
+    --green: #22c55e;
+    --green-bg: #0a2218;
+    --yellow: #f59e0b;
+    --yellow-bg: #231a04;
+    --red: #ef4444;
+    --red-bg: #220a0a;
+    --orange: #f97316;
+    --orange-bg: #1f1108;
+    --black-status: #8b8b8b;
+    --black-bg: #1a1a1a;
+    --purple: #a855f7;
+    --purple-bg: #1a0a2e;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  #app { display: flex; min-height: 100vh; }
+  #sidebar { width: 220px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; height: 100vh; overflow-y: auto; z-index: 100; }
+  #main { margin-left: 220px; flex: 1; padding: 24px; }
+  @media (max-width: 768px) {
+    #sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); padding: 8px; }
+    #main { margin-left: 0; padding: 16px; }
+    .nav-label { display: none; }
+    .sidebar-logo { width: 100%; margin-bottom: 4px; }
+  }
+
+  .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo h1 { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .sidebar-logo p { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .nav-section { padding: 8px 0; }
+  .nav-section-label { padding: 8px 16px 4px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; color: var(--text2); transition: all .15s; border: none; background: none; width: 100%; text-align: left; font-size: 13px; border-radius: 0; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .kpi-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: var(--text); }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .kpi-value.danger { color: var(--red); }
+  .kpi-value.success { color: var(--green); }
+  .kpi-value.warning { color: var(--yellow); }
+  .kpi-value.purple { color: var(--purple); }
+
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg3); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  tr.impago-row td { opacity: .6; }
+  .td-name { color: var(--text); font-weight: 500; }
+  .td-link { color: var(--accent); cursor: pointer; text-decoration: underline; }
+  .td-link:hover { opacity: .8; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-green  { background: var(--green-bg);  color: var(--green); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+  .badge-red    { background: var(--red-bg);    color: var(--red); }
+  .badge-black  { background: var(--black-bg);  color: var(--black-status); }
+  .badge-blue   { background: var(--accent-bg); color: var(--accent); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  input, select, textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); font-size: 14px; outline: none; transition: border .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text3); }
+  textarea { resize: vertical; min-height: 70px; }
+  select option { background: var(--bg2); }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary   { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-danger    { background: var(--red-bg); color: var(--red); border: 1px solid #3d1010; }
+  .btn-danger:hover { border-color: var(--red); }
+  .btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+  .btn-sm  { padding: 6px 12px; font-size: 12px; }
+  .btn-xs  { padding: 4px 9px; font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; }
+  .btn-ghost { background: none; border: none; color: var(--accent); padding: 4px 8px; font-size: 12px; cursor: pointer; }
+  .btn-ghost:hover { opacity: .8; }
+  .btn-impago { background: var(--orange-bg); color: var(--orange); border: 1px solid #3d2000; border-radius: 4px; padding: 4px 9px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .btn-impago:hover { border-color: var(--orange); }
+  .btn-wa { background: #25D366; color: #fff; border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 700; color: var(--text); }
+  .page-sub { font-size: 13px; color: var(--text3); margin-top: 3px; }
+
+  .section { margin-bottom: 28px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
+
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-sm); z-index: 200; max-height: 200px; overflow-y: auto; }
+  .autocomplete-item { padding: 10px 14px; cursor: pointer; color: var(--text); font-size: 13px; }
+  .autocomplete-item:hover { background: var(--bg3); }
+
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+  .progress-fill.green { background: var(--green); }
+  .progress-fill.red   { background: var(--red); }
+
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 14px 18px; color: var(--text); font-size: 13px; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all .25s; max-width: 340px; box-shadow: 0 8px 24px #00000060; }
+  #toast.show    { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left: 3px solid var(--green); }
+  #toast.error   { border-left: 3px solid var(--red); }
+
+  #modal-overlay { display: none; position: fixed; inset: 0; background: #00000080; z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+  #modal-overlay.show { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 14px; padding: 24px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title  { font-size: 17px; font-weight: 700; }
+  .modal-close  { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; padding: 4px; }
+
+  .empty  { padding: 32px; text-align: center; color: var(--text3); }
+  .chip   { display: inline-block; background: var(--bg3); border: 1px solid var(--border); padding: 2px 8px; border-radius: 20px; font-size: 11px; color: var(--text2); }
+  .money  { font-variant-numeric: tabular-nums; }
+  .hidden { display: none !important; }
+
+  .info-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 12px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { color: var(--text3); font-size: 12px; }
+  .info-val { color: var(--text); font-size: 13px; font-weight: 500; }
+
+  .cuota-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .cuota-row:last-child { border-bottom: none; }
+  .cuota-row.impago { opacity: .55; background: var(--orange-bg); }
+  .cuota-concepto { flex: 1; font-size: 13px; color: var(--text); min-width: 80px; }
+  .cuota-fecha    { font-size: 12px; color: var(--text3); }
+  .cuota-monto    { font-size: 13px; font-weight: 600; color: var(--text); min-width: 90px; text-align: right; }
+
+  .alert         { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 16px; }
+  .alert-warning { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #3d2900; }
+  .alert-orange  { background: var(--orange-bg); color: var(--orange); border: 1px solid #3d2000; }
+
+  /* Pagadores card */
+  .pagador-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .pagador-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--green-bg); border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .pagador-info { flex: 1; }
+  .pagador-name { font-weight: 700; font-size: 15px; }
+  .pagador-sub  { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .pagador-total { text-align: right; }
+  .pagador-monto { font-size: 16px; font-weight: 700; color: var(--green); }
+  .pagador-label { font-size: 11px; color: var(--text3); }
+
+  /* Activas card */
+  .activa-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .activa-row:last-child { border-bottom: none; }
+  .activa-cliente { font-weight: 600; font-size: 14px; color: var(--text); min-width: 130px; }
+  .activa-equipo  { font-size: 12px; color: var(--text3); min-width: 120px; }
+  .activa-barra   { flex: 1; min-width: 100px; }
+  .activa-monto   { font-size: 13px; color: var(--text2); min-width: 90px; text-align: right; }
+
+  /* Confirm impago modal */
+  .confirm-box { background: var(--orange-bg); border: 1px solid var(--orange); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 20px; color: var(--orange); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <h1>iReady Store</h1>
+      <p>Gestión de cuotas</p>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Principal</div>
+      <button class="nav-item active" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="navigate('nueva-venta')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="nav-label">Nueva venta</span>
+      </button>
+      <button class="nav-item" onclick="navigate('registrar-cobro')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span class="nav-label">Registrar cobro</span>
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Cartera</div>
+      <button class="nav-item" onclick="navigate('activas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+        <span class="nav-label">Cuotas activas</span>
+      </button>
+      <button class="nav-item" onclick="navigate('clientes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3a4 4 0 0 1 0 8"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        <span class="nav-label">Clientes</span>
+      </button>
+      <button class="nav-item" onclick="navigate('pagadores')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span class="nav-label">Pagadores</span>
+      </button>
+      <button class="nav-item" onclick="navigate('morosos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span class="nav-label">Morosos</span>
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Finanzas</div>
+      <button class="nav-item" onclick="navigate('profit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span class="nav-label">Profit</span>
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Sistema</div>
+      <button class="nav-item" onclick="navigate('backup')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="nav-label">Copia de seguridad</span>
+      </button>
+    </div>
+  </nav>
+
+  <main id="main">
+    <div id="page-dashboard"></div>
+    <div id="page-nueva-venta"      class="hidden"></div>
+    <div id="page-registrar-cobro"  class="hidden"></div>
+    <div id="page-activas"          class="hidden"></div>
+    <div id="page-clientes"         class="hidden"></div>
+    <div id="page-pagadores"        class="hidden"></div>
+    <div id="page-morosos"          class="hidden"></div>
+    <div id="page-cliente-detalle"  class="hidden"></div>
+    <div id="page-profit"           class="hidden"></div>
+    <div id="page-backup"           class="hidden"></div>
+  </main>
+</div>
+
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// DATA LAYER
+// ============================================================
+const DB = {
+  get:    k => JSON.parse(localStorage.getItem('pf_' + k) || '[]'),
+  set:    (k,v) => localStorage.setItem('pf_' + k, JSON.stringify(v)),
+  getObj: k => JSON.parse(localStorage.getItem('pf_' + k) || '{}'),
+  setObj: (k,v) => localStorage.setItem('pf_' + k, JSON.stringify(v))
+};
+
+const clientes      = () => DB.get('clientes');
+const ventas        = () => DB.get('ventas');
+const planPagos     = () => DB.get('plan_pagos');
+const cobros        = () => DB.get('cobros');
+const impagos       = () => DB.get('impagos');
+const counters      = () => DB.getObj('counters');
+const costosCelular = () => DB.get('costos_celular'); // [{id_venta, costo}]
+
+function nextId(prefix) {
+  const c = counters();
+  const n = (c[prefix] || 0) + 1;
+  c[prefix] = n;
+  DB.setObj('counters', c);
+  return prefix + String(n).padStart(3, '0');
+}
+
+function saveClientes(d)      { DB.set('clientes', d); }
+function saveVentas(d)        { DB.set('ventas', d); }
+function savePlan(d)          { DB.set('plan_pagos', d); }
+function saveCobros(d)        { DB.set('cobros', d); }
+function saveImpagos(d)       { DB.set('impagos', d); }
+function saveCostosCelular(d) { DB.set('costos_celular', d); }
+
+function esImpago(cuotaId) { return impagos().includes(cuotaId); }
+
+// ============================================================
+// HELPERS
+// ============================================================
+const $ = id => document.getElementById(id);
+
+function fmt$(n) {
+  return '$' + Math.round(n).toLocaleString('es-AR');
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function vencimientoCuota(fechaVenta, cuotaNum, periodo) {
+  const base = new Date(fechaVenta + 'T12:00:00');
+  const m = base.getMonth() + cuotaNum;
+  const y = base.getFullYear() + Math.floor(m / 12);
+  const mes = m % 12;
+  const dia = periodo === '1-10' ? 10 : 25;
+  return new Date(y, mes, dia).toISOString().split('T')[0];
+}
+
+function diasDesdeHoy(dateStr) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T12:00:00');
+  return Math.round((d - hoy) / 86400000);
+}
+
+function estadoCuota(cuota, cobrosAll) {
+  if (esImpago(cuota.id)) return { estado: 'IMPAGO', saldo: Number(cuota.importe), cobrado: 0 };
+  const cobrado = cobrosAll.filter(c => c.id_cuota === cuota.id).reduce((s,c) => s + Number(c.monto), 0);
+  const saldo = Number(cuota.importe) - cobrado;
+  if (saldo <= 0) return { estado: 'PAGADO', saldo: 0, cobrado };
+  const dias = diasDesdeHoy(cuota.vencimiento);
+  if (dias > 7)  return { estado: 'VERDE',    saldo, cobrado, dias };
+  if (dias >= 0) return { estado: 'AMARILLO', saldo, cobrado, dias };
+  if (dias >= -30) return { estado: 'ROJO',   saldo, cobrado, diasAtraso: -dias };
+  return { estado: 'NEGRO', saldo, cobrado, diasAtraso: -dias };
+}
+
+function badgeEstado(est) {
+  const m = {
+    PAGADO:   ['badge-green',  '✅ Pagado'],
+    VERDE:    ['badge-green',  '🟢 Al día'],
+    AMARILLO: ['badge-yellow', '🟡 Próximo'],
+    ROJO:     ['badge-red',    '🔴 Vencido'],
+    NEGRO:    ['badge-black',  '⚫ Crítico'],
+    IMPAGO:   ['badge-orange', '🚫 Impago'],
+  };
+  const [cls, label] = m[est] || ['badge-blue', est];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// ¿Una venta está completamente liquidada?
+function ventaLiquidada(ventaId, cobrosAll) {
+  const cuotas = planPagos().filter(p => p.id_venta === ventaId);
+  return cuotas.length > 0 && cuotas.every(c => {
+    const est = estadoCuota(c, cobrosAll);
+    return est.estado === 'PAGADO';
+  });
+}
+
+// ¿Tiene al menos una cuota impago?
+function ventaTieneImpago(ventaId) {
+  return planPagos().filter(p => p.id_venta === ventaId).some(c => esImpago(c.id));
+}
+
+function toast(msg, type = 'success') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3500);
+}
+
+function openModal(title, html) {
+  $('modal-title').textContent = title;
+  $('modal-body').innerHTML = html;
+  $('modal-overlay').className = 'show';
+}
+function closeModal() { $('modal-overlay').className = ''; }
+
+// helpers de relación
+function getClienteByPlan(c) {
+  const v = ventas().find(v => v.id === c.id_venta);
+  return v ? v.id_cliente : '';
+}
+function getEquipoByVenta(id_venta) {
+  const v = ventas().find(v => v.id === id_venta);
+  return v ? v.equipo : '';
+}
+function getCelularByPlan(c) {
+  const v = ventas().find(v => v.id === c.id_venta);
+  if (!v) return '';
+  const cl = clientes().find(cl => cl.id === v.id_cliente);
+  return cl ? cl.celular : '';
+}
+// Normaliza un celular para wa.me: si ya viene con +54 9 / 54 9 lo respeta,
+// si no, se lo agrega automáticamente (asumiendo Argentina).
+function normalizarCelular(cel) {
+  if (!cel) return '';
+  let limpio = cel.trim().replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
+  if (limpio.startsWith('549')) return limpio.replace(/\D/g, '');
+  if (limpio.startsWith('54'))  return '549' + limpio.slice(2).replace(/\D/g, '');
+  return '549' + limpio.replace(/^0/, '').replace(/\D/g, '');
+}
+
+function waLink(nombre, cel) {
+  const num = normalizarCelular(cel);
+  if (!num) return '';
+  const txt = encodeURIComponent(`Hola ${nombre}, te escribimos de Paraná Financiados...`);
+  return `<a class="btn-wa" href="https://wa.me/${num}?text=${txt}" target="_blank">WhatsApp</a>`;
+}
+
+// ------------------------------------------------------------
+// ALERTAS DE COBRO (día 5 → período 1-10 / día 20 → período 15-25)
+// ------------------------------------------------------------
+function mensajeCobro(periodo) {
+  const dia = periodo === '1-10' ? '10' : '25';
+  return `Holaa te mando por la cuota del iPhone, estamos en fecha de cobro hasta el ${dia} para abonar, te paso el alias?`;
+}
+function clientesPorPeriodo(periodo) {
+  const vistos = new Set();
+  const out = [];
+  ventas().filter(v => v.periodo === periodo).forEach(v => {
+    if (vistos.has(v.id_cliente)) return;
+    vistos.add(v.id_cliente);
+    const cl = clientes().find(c => c.id === v.id_cliente);
+    if (cl) out.push(cl);
+  });
+  return out;
+}
+function waLinkCobro(nombre, cel, mensaje) {
+  const num = normalizarCelular(cel);
+  if (!num) return '<span style="font-size:11px;color:var(--text3)">Sin celular</span>';
+  const txt = encodeURIComponent(mensaje);
+  return `<a class="btn-wa" href="https://wa.me/${num}?text=${txt}" target="_blank">WhatsApp</a>`;
+}
+function renderAlertaCobro() {
+  const dia = Number(today().split('-')[2]);
+  let periodo = null;
+  if (dia === 5)  periodo = '1-10';
+  if (dia === 20) periodo = '15-25';
+  if (!periodo) return '';
+
+  const lista = clientesPorPeriodo(periodo);
+  const mensaje = mensajeCobro(periodo);
+
+  const filas = lista.map(cl => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:var(--radius-sm);">
+      <div>
+        <div style="font-weight:600;color:var(--text)">${cl.nombre}</div>
+        <div style="font-size:11px;color:var(--text3)">${cl.celular || 'Sin celular'}</div>
+      </div>
+      ${waLinkCobro(cl.nombre, cl.celular, mensaje)}
+    </div>`).join('');
+
+  return `
+    <div class="card" style="border-color:#f59e0b40;background:var(--yellow-bg);margin-bottom:20px;">
+      <div style="font-weight:700;color:var(--yellow);font-size:15px;margin-bottom:4px;">🔔 Hoy toca mandar alerta de cobro</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+        Clientes del período <strong>${periodo}</strong> — ${lista.length} cliente${lista.length!==1?'s':''}. Tocá el botón de WhatsApp de cada uno para mandarle el mensaje.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${lista.length===0 ? '<div style="color:var(--text3);font-size:13px;">No hay clientes en este período</div>' : filas}
+      </div>
+    </div>`;
+}
+
+function renderAlertaBackup() {
+  const lastBackup = localStorage.getItem('pf_last_backup');
+  const dias = lastBackup ? Math.round((Date.now() - new Date(lastBackup).getTime()) / 86400000) : null;
+  if (dias !== null && dias < 7) return '';
+  return `
+    <div class="card" style="border-color:#f9731640;background:var(--orange-bg);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:700;color:var(--orange);font-size:14px;">💾 ${dias===null ? 'Nunca hiciste una copia de seguridad' : `Hace ${dias} día${dias!==1?'s':''} que no hacés un backup`}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">Descargá una copia para no perder tus datos si se borra el navegador.</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="navigate('backup')">Ir a Backup →</button>
+    </div>`;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+let currentPage = 'dashboard';
+const allPages = ['dashboard','nueva-venta','registrar-cobro','activas','clientes','pagadores','morosos','cliente-detalle','profit','backup'];
+
+function navigate(page, params) {
+  allPages.forEach(p => { const el = $('page-' + p); if (el) el.classList.add('hidden'); });
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  currentPage = page;
+  const pageEl = $('page-' + page);
+  if (pageEl) { pageEl.classList.remove('hidden'); renderPage(page, params); }
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.getAttribute('onclick') && el.getAttribute('onclick').includes("'"+page+"'")) el.classList.add('active');
+  });
+  window.scrollTo(0,0);
+}
+
+function renderPage(page, params) {
+  const r = {
+    'dashboard':       renderDashboard,
+    'nueva-venta':     renderNuevaVenta,
+    'registrar-cobro': renderCobro,
+    'activas':         renderActivas,
+    'clientes':        renderClientes,
+    'pagadores':       renderPagadores,
+    'morosos':         renderMorosos,
+    'cliente-detalle': () => renderClienteDetalle(params),
+    'profit':          renderProfit,
+    'backup':          renderBackup,
+  };
+  if (r[page]) r[page]();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const el = $('page-dashboard');
+  const cobrosAll = cobros();
+  const plan = planPagos();
+  const hoy  = today();
+
+  // KPIs — excluir impagos del financiado activo
+  let totalFinanciado = 0, totalCobrado = 0, totalVencido = 0;
+  plan.forEach(c => {
+    if (esImpago(c.id)) return;
+    const est = estadoCuota(c, cobrosAll);
+    totalFinanciado += Number(c.importe);
+    totalCobrado    += est.cobrado;
+    if (est.estado === 'ROJO' || est.estado === 'NEGRO') totalVencido += est.saldo;
+  });
+  const pendiente = totalFinanciado - totalCobrado;
+  const mesHoy = hoy.slice(0,7);
+  const cobradoMes = cobrosAll.filter(c => c.fecha.startsWith(mesHoy)).reduce((s,c) => s + Number(c.monto), 0);
+  const riesgo = totalFinanciado > 0 ? (totalVencido / totalFinanciado * 100).toFixed(1) : 0;
+
+  // Profit del mes: cobros del mes - costos de ventas registradas ese mes
+  const costos = costosCelular();
+  const ventasMes = ventas().filter(v => v.fecha.startsWith(mesHoy));
+  const costoMes  = ventasMes.reduce((s,v) => { const c = costos.find(c=>c.id_venta===v.id); return s + (c ? Number(c.costo) : 0); }, 0);
+  const ingresoBrutoMes = ventasMes.reduce((s,v) => { const plan = planPagos().filter(p=>p.id_venta===v.id); return s + plan.reduce((a,p)=>a+Number(p.importe),0); }, 0);
+  const profitMes = ingresoBrutoMes - costoMes;
+
+  // Profit global
+  const costoTotal = costos.reduce((s,c)=>s+Number(c.costo),0);
+  const ingresoTotal = planPagos().reduce((s,p)=>s+Number(p.importe),0);
+  const profitGlobal = ingresoTotal - costoTotal;
+
+  // Próximos 30 días (sin impagos)
+  const proximos = plan
+    .filter(c => {
+      if (esImpago(c.id)) return false;
+      const est = estadoCuota(c, cobrosAll);
+      if (est.saldo <= 0) return false;
+      const dias = diasDesdeHoy(c.vencimiento);
+      return dias >= 0 && dias <= 30;
+    })
+    .map(c => ({ ...c, est: estadoCuota(c, cobrosAll), diasHasta: diasDesdeHoy(c.vencimiento) }))
+    .sort((a,b) => a.diasHasta - b.diasHasta);
+
+  // Morosos activos (sin impagos — esos van a su propia sección)
+  const morosos = plan
+    .filter(c => {
+      if (esImpago(c.id)) return false;
+      const est = estadoCuota(c, cobrosAll);
+      return est.saldo > 0 && (est.estado === 'ROJO' || est.estado === 'NEGRO') && est.diasAtraso > 7;
+    })
+    .map(c => ({ ...c, est: estadoCuota(c, cobrosAll) }))
+    .sort((a,b) => b.est.diasAtraso - a.est.diasAtraso);
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Dashboard</div><div class="page-sub">Resumen general de la cartera</div></div>
+    </div>
+    ${renderAlertaBackup()}
+    ${renderAlertaCobro()}
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total financiado</div><div class="kpi-value money">${fmt$(totalFinanciado)}</div></div>
+      <div class="kpi"><div class="kpi-label">Total cobrado</div><div class="kpi-value success money">${fmt$(totalCobrado)}</div></div>
+      <div class="kpi"><div class="kpi-label">Saldo pendiente</div><div class="kpi-value money">${fmt$(pendiente)}</div></div>
+      <div class="kpi"><div class="kpi-label">Cobros este mes</div><div class="kpi-value money">${fmt$(cobradoMes)}</div></div>
+      <div class="kpi"><div class="kpi-label">Riesgo de cartera</div><div class="kpi-value ${Number(riesgo)>20?'danger':Number(riesgo)>10?'warning':'success'}">${riesgo}%</div><div class="kpi-sub">Vencido / financiado</div></div>
+      <div class="kpi" style="border-color:${profitMes>=0?'var(--green)':'var(--red)'}20">
+        <div class="kpi-label">💹 Profit este mes</div>
+        <div class="kpi-value ${profitMes>=0?'success':'danger'} money">${fmt$(profitMes)}</div>
+        <div class="kpi-sub" style="cursor:pointer;color:var(--accent)" onclick="navigate('profit')">Ver detalle →</div>
+      </div>
+      <div class="kpi" style="border-color:${profitGlobal>=0?'var(--green)':'var(--red)'}20">
+        <div class="kpi-label">📊 Profit global</div>
+        <div class="kpi-value ${profitGlobal>=0?'success':'danger'} money">${fmt$(profitGlobal)}</div>
+        <div class="kpi-sub" style="cursor:pointer;color:var(--accent)" onclick="navigate('profit')">Ver detalle →</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Vencimientos próximos — 30 días</span>
+        <span class="chip">${proximos.length} cuotas</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cliente</th><th>Equipo</th><th>Concepto</th><th>Vencimiento</th><th>Saldo</th><th>Estado</th></tr></thead>
+        <tbody>${proximos.length===0?`<tr><td colspan="6" class="empty">Sin vencimientos en los próximos 30 días</td></tr>`:
+          proximos.map(c=>`<tr>
+            <td class="td-link td-name" onclick="navigate('cliente-detalle','${getClienteByPlan(c)}')">${c.nombre}</td>
+            <td>${getEquipoByVenta(c.id_venta)}</td><td>${c.concepto}</td>
+            <td>${fmtDate(c.vencimiento)}</td>
+            <td class="money">${fmt$(c.est.saldo)}</td>
+            <td>${badgeEstado(c.est.estado)}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Morosos activos</span>
+        <span class="chip">${morosos.length}</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cliente</th><th>Equipo</th><th>Concepto</th><th>Vencimiento</th><th>Saldo</th><th>Atraso</th><th></th></tr></thead>
+        <tbody>${morosos.length===0?`<tr><td colspan="7" class="empty">Sin morosos 🎉</td></tr>`:
+          morosos.map(c=>`<tr>
+            <td class="td-link td-name" onclick="navigate('cliente-detalle','${getClienteByPlan(c)}')">${c.nombre}</td>
+            <td>${getEquipoByVenta(c.id_venta)}</td><td>${c.concepto}</td>
+            <td>${fmtDate(c.vencimiento)}</td>
+            <td class="money">${fmt$(c.est.saldo)}</td>
+            <td>${badgeEstado(c.est.estado)} <small style="color:var(--text3)">${c.est.diasAtraso}d</small></td>
+            <td>${waLink(c.nombre, getCelularByPlan(c))}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+  `;
+}
+
+// ============================================================
+// NUEVA VENTA
+// ============================================================
+function renderNuevaVenta() {
+  const el = $('page-nueva-venta');
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Nueva venta</div><div class="page-sub">Registrá una venta y generá el plan de cuotas automáticamente</div></div>
+    </div>
+    <div class="card" style="max-width:620px;">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre y apellido *</label><input id="nv-nombre" type="text" placeholder="Juan Pérez" autocomplete="off"></div>
+        <div class="form-group"><label>DNI</label><input id="nv-dni" type="text" placeholder="32145678"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Celular</label><input id="nv-celular" type="text" placeholder="3434000001"></div>
+        <div class="form-group"><label>Equipo / modelo *</label><input id="nv-equipo" type="text" placeholder="iPhone 15 128GB"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Monto entrega ($) *</label><input id="nv-entrega" type="number" placeholder="300000"></div>
+        <div class="form-group"><label>Cantidad de cuotas *</label><input id="nv-cuotas" type="number" value="4" min="1" max="24"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Importe por cuota ($) *</label><input id="nv-importe-cuota" type="number" placeholder="188000"></div>
+        <div class="form-group"><label>Período de cobro *</label>
+          <select id="nv-periodo">
+            <option value="1-10">1–10 (vence día 10)</option>
+            <option value="15-25">15–25 (vence día 25)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Fecha de venta</label><input id="nv-fecha" type="date" value="${today()}"></div>
+        <div class="form-group"><label>💰 Costo del equipo ($) <span style="color:var(--text3);font-weight:400">(inversión)</span></label><input id="nv-costo" type="number" placeholder="Ej: 850000"></div>
+      </div>
+      <div id="nv-preview" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="registrarVenta()">Registrar venta</button>
+        <button class="btn btn-secondary" onclick="previewCuotas()">Vista previa</button>
+      </div>
+    </div>`;
+}
+
+function previewCuotas() {
+  const fecha   = $('nv-fecha').value || today();
+  const periodo = $('nv-periodo').value;
+  const n       = parseInt($('nv-cuotas').value) || 4;
+  const imp     = parseFloat($('nv-importe-cuota').value) || 0;
+  const entrega = parseFloat($('nv-entrega').value) || 0;
+  let rows = `<div class="info-row"><span class="info-key">Entrega</span><span class="info-val">${fmtDate(fecha)} — ${fmt$(entrega)}</span></div>`;
+  for (let i=1;i<=n;i++) {
+    const v = vencimientoCuota(fecha,i,periodo);
+    rows += `<div class="info-row"><span class="info-key">Cuota ${i}</span><span class="info-val">${fmtDate(v)} — ${fmt$(imp)}</span></div>`;
+  }
+  $('nv-preview').innerHTML = `<div class="info-box"><div style="font-size:12px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase;">Plan de pagos</div>${rows}<div class="info-row"><span class="info-key">Total</span><span class="info-val">${fmt$(entrega+n*imp)}</span></div></div>`;
+}
+
+function registrarVenta() {
+  const nombre    = $('nv-nombre').value.trim();
+  const dni       = $('nv-dni').value.trim();
+  const celular   = $('nv-celular').value.trim();
+  const equipo    = $('nv-equipo').value.trim();
+  const entrega   = parseFloat($('nv-entrega').value);
+  const nCuotas   = parseInt($('nv-cuotas').value);
+  const impCuota  = parseFloat($('nv-importe-cuota').value);
+  const periodo   = $('nv-periodo').value;
+  const fecha     = $('nv-fecha').value || today();
+  if (!nombre||!equipo||isNaN(entrega)||isNaN(nCuotas)||isNaN(impCuota)) { toast('Completá los campos obligatorios','error'); return; }
+  let cls = clientes();
+  let cliente = cls.find(c => c.nombre.toLowerCase()===nombre.toLowerCase());
+  if (!cliente) { cliente={id:nextId('C'),nombre,dni,celular,notas:''}; cls.push(cliente); saveClientes(cls); }
+  const ventaId = nextId('V');
+  const vts = ventas();
+  vts.push({id:ventaId,id_cliente:cliente.id,equipo,fecha,entrega,n_cuotas:nCuotas,imp_cuota:impCuota,periodo});
+  saveVentas(vts);
+  // Guardar costo del equipo si se ingresó
+  const costoVal = parseFloat($('nv-costo').value);
+  if (!isNaN(costoVal) && costoVal > 0) {
+    const costos = costosCelular();
+    costos.push({id_venta: ventaId, costo: costoVal});
+    saveCostosCelular(costos);
+  }
+  const plan = planPagos();
+  plan.push({id:ventaId+'-E',id_venta:ventaId,nombre,concepto:'Entrega',vencimiento:fecha,importe:entrega,periodo});
+  for (let i=1;i<=nCuotas;i++) plan.push({id:ventaId+'-'+i,id_venta:ventaId,nombre,concepto:'Cuota '+i,vencimiento:vencimientoCuota(fecha,i,periodo),importe:impCuota,periodo});
+  savePlan(plan);
+  toast(`Venta ${ventaId} registrada. ${nCuotas} cuotas generadas para ${nombre}.`);
+  ['nv-nombre','nv-dni','nv-celular','nv-equipo','nv-entrega','nv-importe-cuota','nv-costo'].forEach(id=>$(id).value='');
+  $('nv-cuotas').value=4; $('nv-fecha').value=today(); $('nv-preview').innerHTML='';
+}
+
+// ============================================================
+// REGISTRAR COBRO
+// ============================================================
+let cobroClienteId=null, cobroCuotaId=null;
+
+function renderCobro() {
+  const el = $('page-registrar-cobro');
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Registrar cobro</div><div class="page-sub">Buscá el cliente y registrá el pago</div></div>
+    </div>
+    <div class="card" style="max-width:620px;">
+      <div class="form-group">
+        <label>Buscar cliente</label>
+        <div class="autocomplete-wrap">
+          <input id="cobro-buscar" type="text" placeholder="Escribí el nombre..." autocomplete="off" oninput="autocompleteCliente(this.value)">
+          <div id="cobro-lista" class="autocomplete-list hidden"></div>
+        </div>
+      </div>
+      <div id="cobro-resumen" class="hidden"></div>
+      <div id="cobro-form" class="hidden">
+        <div class="form-group">
+          <label>Seleccioná cuota</label>
+          <select id="cobro-cuota" onchange="seleccionarCuota()"><option value="">— elegí una cuota —</option></select>
+        </div>
+        <div id="cobro-cuota-info" class="hidden info-box" style="margin-bottom:16px;"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Monto cobrado ($) *</label><input id="cobro-monto" type="number" placeholder="188000"></div>
+          <div class="form-group"><label>Fecha de cobro</label><input id="cobro-fecha" type="date" value="${today()}"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Método</label><select id="cobro-metodo"><option>Efectivo</option><option>Transferencia</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Notas (opcional)</label><input id="cobro-notas" type="text" placeholder="Observaciones..."></div>
+        </div>
+        <button class="btn btn-primary" onclick="registrarCobro()">Registrar cobro</button>
+      </div>
+    </div>`;
+  cobroClienteId=null; cobroCuotaId=null;
+}
+
+function autocompleteCliente(q) {
+  const lista=$('cobro-lista');
+  if (!q.trim()){lista.classList.add('hidden');return;}
+  const res=clientes().filter(c=>c.nombre.toLowerCase().includes(q.toLowerCase()));
+  if(!res.length){lista.classList.add('hidden');return;}
+  lista.classList.remove('hidden');
+  lista.innerHTML=res.map(c=>`<div class="autocomplete-item" onclick="seleccionarCliente('${c.id}')">${c.nombre}</div>`).join('');
+}
+
+function seleccionarCliente(id) {
+  const cl=clientes().find(c=>c.id===id); if(!cl)return;
+  cobroClienteId=id;
+  $('cobro-buscar').value=cl.nombre;
+  $('cobro-lista').classList.add('hidden');
+  const cobrosAll=cobros();
+  const plan=planPagos();
+  const vts=ventas().filter(v=>v.id_cliente===id);
+  let totalDeuda=0,totalPagado=0;
+  const cuotasPendientes=[];
+  vts.forEach(v=>{
+    plan.filter(p=>p.id_venta===v.id).forEach(p=>{
+      const est=estadoCuota(p,cobrosAll);
+      if (!esImpago(p.id)) { totalDeuda+=Number(p.importe); totalPagado+=est.cobrado; }
+      if(est.saldo>0&&!esImpago(p.id)) cuotasPendientes.push({...p,est,equipo:v.equipo});
+    });
+  });
+  const resumenEl=$('cobro-resumen');
+  resumenEl.classList.remove('hidden');
+  resumenEl.innerHTML=`
+    <div class="info-box" style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;font-weight:600;text-transform:uppercase;">Resumen — ${cl.nombre}</div>
+      <div class="info-row"><span class="info-key">Total financiado</span><span class="info-val">${fmt$(totalDeuda)}</span></div>
+      <div class="info-row"><span class="info-key">Total cobrado</span><span class="info-val" style="color:var(--green)">${fmt$(totalPagado)}</span></div>
+      <div class="info-row"><span class="info-key">Saldo pendiente</span><span class="info-val" style="color:var(--red)">${fmt$(totalDeuda-totalPagado)}</span></div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:16px;"><table>
+      <thead><tr><th>Concepto</th><th>Equipo</th><th>Vence</th><th>Saldo</th><th>Estado</th></tr></thead>
+      <tbody>${cuotasPendientes.map(c=>`<tr><td>${c.concepto}</td><td>${c.equipo}</td><td>${fmtDate(c.vencimiento)}</td><td class="money">${fmt$(c.est.saldo)}</td><td>${badgeEstado(c.est.estado)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  const sel=$('cobro-cuota');
+  sel.innerHTML='<option value="">— elegí una cuota —</option>';
+  cuotasPendientes.forEach(c=>{ sel.innerHTML+=`<option value="${c.id}">${c.concepto} — ${c.equipo} — vence ${fmtDate(c.vencimiento)} — debe ${fmt$(c.est.saldo)}</option>`; });
+  $('cobro-form').classList.remove('hidden');
+  $('cobro-cuota-info').classList.add('hidden');
+}
+
+function seleccionarCuota() {
+  cobroCuotaId=$('cobro-cuota').value;
+  const infoEl=$('cobro-cuota-info');
+  if(!cobroCuotaId){infoEl.classList.add('hidden');return;}
+  const cuota=planPagos().find(p=>p.id===cobroCuotaId); if(!cuota)return;
+  const est=estadoCuota(cuota,cobros());
+  infoEl.classList.remove('hidden');
+  infoEl.innerHTML=`
+    <div class="info-row"><span class="info-key">Importe original</span><span class="info-val">${fmt$(cuota.importe)}</span></div>
+    <div class="info-row"><span class="info-key">Ya cobrado</span><span class="info-val" style="color:var(--green)">${fmt$(est.cobrado)}</span></div>
+    <div class="info-row"><span class="info-key">Saldo pendiente</span><span class="info-val" style="color:var(--red)">${fmt$(est.saldo)}</span></div>`;
+  $('cobro-monto').value=est.saldo;
+}
+
+function registrarCobro() {
+  if(!cobroClienteId){toast('Seleccioná un cliente','error');return;}
+  if(!cobroCuotaId){toast('Seleccioná una cuota','error');return;}
+  const monto=parseFloat($('cobro-monto').value);
+  if(isNaN(monto)||monto<=0){toast('Ingresá un monto válido','error');return;}
+  const cuota=planPagos().find(p=>p.id===cobroCuotaId);
+  const id=nextId('COB');
+  const cobs=cobros();
+  cobs.push({id,id_cuota:cobroCuotaId,nombre:cuota.nombre,fecha:$('cobro-fecha').value||today(),monto,metodo:$('cobro-metodo').value,notas:$('cobro-notas').value});
+  saveCobros(cobs);
+  toast(`Cobro ${id} registrado — ${fmt$(monto)}`);
+  $('cobro-monto').value=''; $('cobro-notas').value=''; $('cobro-fecha').value=today();
+  $('cobro-cuota').value=''; $('cobro-cuota-info').classList.add('hidden'); cobroCuotaId=null;
+  seleccionarCliente(cobroClienteId);
+}
+
+// ============================================================
+// CUOTAS ACTIVAS
+// ============================================================
+function renderActivas() {
+  const el = $('page-activas');
+  const cobrosAll = cobros();
+  const plan = planPagos();
+
+  // Ventas que NO están liquidadas y NO tienen todas impago
+  const vts = ventas().filter(v => !ventaLiquidada(v.id, cobrosAll));
+
+  // Armar filas agrupadas por venta
+  const filas = vts.map(v => {
+    const cuotas = plan.filter(p => p.id_venta === v.id);
+    let total=0, cobrado=0, pendCount=0, vencCount=0, impagoCount=0;
+    cuotas.forEach(c => {
+      if (esImpago(c.id)) { impagoCount++; return; }
+      const est = estadoCuota(c, cobrosAll);
+      total   += Number(c.importe);
+      cobrado += est.cobrado;
+      if (est.saldo > 0) pendCount++;
+      if (est.estado==='ROJO'||est.estado==='NEGRO') vencCount++;
+    });
+    const cl = clientes().find(cl => cl.id === v.id_cliente);
+    return { v, cl, total, cobrado, pendCount, vencCount, impagoCount, pct: total>0 ? Math.min(100, cobrado/total*100) : 0 };
+  }).filter(f => f.pendCount > 0 || f.impagoCount > 0);
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Cuotas activas</div><div class="page-sub">${filas.length} ventas en curso</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cliente</th><th>Equipo</th><th>Progreso</th><th>Cobrado / Total</th><th>Pendientes</th><th>Vencidas</th><th>Impagas</th><th></th></tr></thead>
+        <tbody>
+          ${filas.length===0?`<tr><td colspan="8" class="empty">Sin ventas activas</td></tr>`:
+            filas.map(f=>`
+              <tr style="cursor:pointer" onclick="navigate('cliente-detalle','${f.v.id_cliente}')">
+                <td class="td-name td-link">${f.cl ? f.cl.nombre : '—'}</td>
+                <td>${f.v.equipo}</td>
+                <td style="min-width:120px">
+                  <div class="progress-bar">
+                    <div class="progress-fill ${f.pct>=100?'green':f.vencCount>0?'red':''}" style="width:${f.pct}%"></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:3px">${Math.round(f.pct)}%</div>
+                </td>
+                <td class="money">${fmt$(f.cobrado)} <span style="color:var(--text3)">/ ${fmt$(f.total)}</span></td>
+                <td>${f.pendCount>0?`<span class="chip">${f.pendCount}</span>`:'—'}</td>
+                <td>${f.vencCount>0?`<span class="badge badge-red">${f.vencCount}</span>`:'—'}</td>
+                <td>${f.impagoCount>0?`<span class="badge badge-orange">${f.impagoCount}</span>`:'—'}</td>
+                <td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();navigate('cliente-detalle','${f.v.id_cliente}')">Ver →</button></td>
+              </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+function renderClientes() {
+  const el = $('page-clientes');
+  const cobrosAll = cobros();
+  const plan = planPagos();
+  const cls = clientes().map(cl => {
+    const vts = ventas().filter(v=>v.id_cliente===cl.id);
+    let deuda=0;
+    let proxima=null; // próxima cuota pendiente (no impaga, con saldo)
+    vts.forEach(v=>{
+      plan.filter(p=>p.id_venta===v.id).forEach(p=>{
+        if(!esImpago(p.id)){
+          const est=estadoCuota(p,cobrosAll);
+          deuda+=est.saldo;
+          if(est.saldo>0 && (!proxima || p.vencimiento<proxima.vencimiento)){
+            proxima = {...p, est};
+          }
+        }
+      });
+    });
+    const liquidada = vts.length>0 && vts.every(v=>ventaLiquidada(v.id,cobrosAll));
+    return {...cl,deuda,ventasCount:vts.length,liquidada,proxima};
+  }).sort((a,b)=>b.deuda-a.deuda);
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Clientes</div><div class="page-sub">${cls.length} clientes registrados</div></div>
+      <button class="btn btn-primary" onclick="navigate('nueva-venta')">+ Nueva venta</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Nombre</th><th>Celular</th><th>Ventas</th><th>Saldo pendiente</th><th>Próximo pago</th><th>Estado</th></tr></thead>
+      <tbody>${cls.length===0?`<tr><td colspan="6" class="empty">Sin clientes — registrá una venta</td></tr>`:
+        cls.map(cl=>`<tr style="cursor:pointer" onclick="navigate('cliente-detalle','${cl.id}')">
+          <td class="td-name td-link">${cl.nombre}</td>
+          <td>${cl.celular||'—'}</td>
+          <td>${cl.ventasCount}</td>
+          <td class="money">${fmt$(cl.deuda)}</td>
+          <td>${cl.proxima?`${fmtDate(cl.proxima.vencimiento)} ${badgeEstado(cl.proxima.est.estado)}`:'<span style="color:var(--text3)">—</span>'}</td>
+          <td>${cl.liquidada?'<span class="badge badge-green">✅ Liquidado</span>':cl.deuda<=0?'<span class="badge badge-blue">Sin deuda</span>':'<span class="badge badge-red">Con saldo</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// ============================================================
+// PAGADORES (clientes que liquidaron todo)
+// ============================================================
+function renderPagadores() {
+  const el = $('page-pagadores');
+  const cobrosAll = cobros();
+  const plan = planPagos();
+
+  const pagadores = clientes()
+    .map(cl => {
+      const vts = ventas().filter(v=>v.id_cliente===cl.id);
+      if (vts.length===0) return null;
+      // Todas las ventas liquidadas (sin impagos)
+      const todasLiquidadas = vts.every(v=>ventaLiquidada(v.id,cobrosAll));
+      if (!todasLiquidadas) return null;
+      // Calcular totales
+      let totalPagado=0, totalVentas=vts.length;
+      let fechaUltima='';
+      vts.forEach(v=>{
+        plan.filter(p=>p.id_venta===v.id).forEach(p=>{ totalPagado+=Number(p.importe); });
+        if (v.fecha > fechaUltima) fechaUltima=v.fecha;
+      });
+      const equipos = vts.map(v=>v.equipo).join(', ');
+      return {...cl,totalPagado,totalVentas,fechaUltima,equipos};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.totalPagado-a.totalPagado);
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Clientes pagadores</div>
+        <div class="page-sub">${pagadores.length} clientes que liquidaron todas sus cuotas</div>
+      </div>
+    </div>
+    ${pagadores.length===0?`<div class="empty" style="margin-top:40px;">Aún no hay clientes que hayan liquidado todas sus cuotas.</div>`:''}
+    ${pagadores.map(p=>`
+      <div class="pagador-card">
+        <div class="pagador-avatar">✅</div>
+        <div class="pagador-info">
+          <div class="pagador-name td-link" onclick="navigate('cliente-detalle','${p.id}')">${p.nombre}</div>
+          <div class="pagador-sub">${p.equipos} · ${p.totalVentas} venta${p.totalVentas>1?'s':''} · última ${fmtDate(p.fechaUltima)}</div>
+          <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+            ${p.celular?`<span style="font-size:12px;color:var(--text3)">${p.celular}</span>`:''}
+            ${p.dni?`<span class="chip">DNI ${p.dni}</span>`:''}
+            ${waLink(p.nombre, p.celular)}
+          </div>
+        </div>
+        <div class="pagador-total">
+          <div class="pagador-monto money">${fmt$(p.totalPagado)}</div>
+          <div class="pagador-label">total pagado</div>
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+// ============================================================
+// MOROSOS (incluye los marcados como IMPAGO)
+// ============================================================
+function renderMorosos() {
+  const el = $('page-morosos');
+  const cobrosAll = cobros();
+  const plan = planPagos();
+
+  // Morosos regulares (vencidos sin impago)
+  const morosos = plan
+    .filter(c => {
+      if (esImpago(c.id)) return false;
+      const est=estadoCuota(c,cobrosAll);
+      return est.saldo>0&&(est.estado==='ROJO'||est.estado==='NEGRO');
+    })
+    .map(c => {
+      const est=estadoCuota(c,cobrosAll);
+      const v=ventas().find(v=>v.id===c.id_venta);
+      const cl=v?clientes().find(cl=>cl.id===v.id_cliente):null;
+      return {...c,est,equipo:v?v.equipo:'',celular:cl?cl.celular:'',id_cliente:v?v.id_cliente:''};
+    })
+    .sort((a,b)=>b.est.diasAtraso-a.est.diasAtraso);
+
+  // Impagos
+  const impagosLista = plan
+    .filter(c=>esImpago(c.id))
+    .map(c=>{
+      const v=ventas().find(v=>v.id===c.id_venta);
+      const cl=v?clientes().find(cl=>cl.id===v.id_cliente):null;
+      return {...c,equipo:v?v.equipo:'',celular:cl?cl.celular:'',id_cliente:v?v.id_cliente:''};
+    });
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Morosos</div><div class="page-sub">${morosos.length} vencidas · ${impagosLista.length} impagas</div></div>
+    </div>
+
+    ${morosos.length>0?`<div class="alert alert-warning">⚠️ ${morosos.length} cuota(s) vencida(s). Podés marcarlas como IMPAGO desde la ficha del cliente.</div>`:''}
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">Cuotas vencidas</span><span class="chip">${morosos.length}</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cliente</th><th>Equipo</th><th>Concepto</th><th>Vencimiento</th><th>Saldo</th><th>Atraso</th><th>Estado</th><th>Contactar</th></tr></thead>
+        <tbody>${morosos.length===0?`<tr><td colspan="8" class="empty">Sin morosos 🎉</td></tr>`:
+          morosos.map(c=>`<tr>
+            <td class="td-link td-name" onclick="navigate('cliente-detalle','${c.id_cliente}')">${c.nombre}</td>
+            <td>${c.equipo}</td><td>${c.concepto}</td>
+            <td>${fmtDate(c.vencimiento)}</td>
+            <td class="money">${fmt$(c.est.saldo)}</td>
+            <td style="color:var(--red);font-weight:600">${c.est.diasAtraso} días</td>
+            <td>${badgeEstado(c.est.estado)}</td>
+            <td>${waLink(c.nombre,c.celular)}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">Cuotas marcadas como impago</span><span class="chip">${impagosLista.length}</span></div>
+      ${impagosLista.length===0?`<div class="empty" style="border:1px solid var(--border);border-radius:var(--radius)">Sin cuotas marcadas como impago</div>`:`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cliente</th><th>Equipo</th><th>Concepto</th><th>Vencimiento</th><th>Importe</th><th>Estado</th><th>Contactar</th><th></th></tr></thead>
+        <tbody>${impagosLista.map(c=>`<tr class="impago-row">
+          <td class="td-link td-name" onclick="navigate('cliente-detalle','${c.id_cliente}')">${c.nombre}</td>
+          <td>${c.equipo}</td><td>${c.concepto}</td>
+          <td>${fmtDate(c.vencimiento)}</td>
+          <td class="money">${fmt$(c.importe)}</td>
+          <td>${badgeEstado('IMPAGO')}</td>
+          <td>${waLink(c.nombre,c.celular)}</td>
+          <td><button class="btn-ghost" onclick="revertirImpago('${c.id}')" title="Quitar impago">↩ Revertir</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>
+  `;
+}
+
+// ============================================================
+// IMPAGO — marcar / revertir
+// ============================================================
+function confirmarImpago(cuotaId, concepto, clienteId) {
+  const cuota = planPagos().find(p=>p.id===cuotaId);
+  if (!cuota) return;
+  openModal('Marcar como impago', `
+    <div class="confirm-box">
+      ⚠️ Al marcar esta cuota como <strong>IMPAGO</strong> vas a:
+      <ul style="margin-top:8px;padding-left:18px;line-height:2">
+        <li>Eliminarla del dashboard y vencimientos</li>
+        <li>Fijarla permanentemente en la sección Morosos</li>
+        <li>Excluirla del cálculo de saldo activo</li>
+      </ul>
+    </div>
+    <div class="info-box" style="margin-bottom:20px;">
+      <div class="info-row"><span class="info-key">Cuota</span><span class="info-val">${concepto}</span></div>
+      <div class="info-row"><span class="info-key">Importe</span><span class="info-val">${fmt$(cuota.importe)}</span></div>
+      <div class="info-row"><span class="info-key">Vencimiento</span><span class="info-val">${fmtDate(cuota.vencimiento)}</span></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="ejecutarImpago('${cuotaId}','${clienteId}')">Confirmar impago</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    </div>
+  `);
+}
+
+function ejecutarImpago(cuotaId, clienteId) {
+  const imp = impagos();
+  if (!imp.includes(cuotaId)) { imp.push(cuotaId); saveImpagos(imp); }
+  closeModal();
+  toast('Cuota marcada como impago — aparece en Morosos', 'error');
+  renderClienteDetalle(clienteId);
+}
+
+function revertirImpago(cuotaId) {
+  const imp = impagos().filter(id=>id!==cuotaId);
+  saveImpagos(imp);
+  toast('Impago revertido — la cuota vuelve a la cartera activa');
+  renderMorosos();
+}
+
+// ============================================================
+// CLIENTE DETALLE
+// ============================================================
+function renderClienteDetalle(clienteId) {
+  const el = $('page-cliente-detalle');
+  if (!clienteId) { el.innerHTML='<div class="empty">Cliente no encontrado</div>'; return; }
+  const cl = clientes().find(c=>c.id===clienteId);
+  if (!cl) { el.innerHTML='<div class="empty">Cliente no encontrado</div>'; return; }
+
+  const cobrosAll = cobros();
+  const plan = planPagos();
+  const vts = ventas().filter(v=>v.id_cliente===clienteId);
+
+  let html = `
+    <div class="page-header">
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="history.back()" style="margin-bottom:10px;">← Volver</button>
+        <div class="page-title">${cl.nombre}</div>
+        <div class="page-sub">${cl.dni?'DNI '+cl.dni:''} ${cl.celular?'· '+cl.celular:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${waLink(cl.nombre,cl.celular)}
+        <button class="btn btn-primary btn-sm" onclick="navigate('registrar-cobro')">Registrar cobro</button>
+      </div>
+    </div>`;
+
+  if (vts.length===0) {
+    html+='<div class="empty">Sin ventas registradas.</div>';
+  } else {
+    vts.forEach(v=>{
+      const cuotas=plan.filter(p=>p.id_venta===v.id);
+      let totalV=0,cobradoV=0;
+      const cuotasConEst=cuotas.map(c=>{
+        const est=estadoCuota(c,cobrosAll);
+        if (!esImpago(c.id)) { totalV+=Number(c.importe); cobradoV+=est.cobrado; }
+        return {...c,est};
+      });
+      const pct=totalV>0?Math.min(100,cobradoV/totalV*100):0;
+      const liquidada=ventaLiquidada(v.id,cobrosAll);
+      const tieneImpago=ventaTieneImpago(v.id);
+
+      html+=`
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-size:16px;font-weight:700;">${v.equipo}
+                ${liquidada?'<span class="badge badge-green" style="margin-left:8px;vertical-align:middle;">✅ Liquidada</span>':''}
+                ${tieneImpago&&!liquidada?'<span class="badge badge-orange" style="margin-left:8px;vertical-align:middle;">🚫 Impago</span>':''}
+              </div>
+              <div style="font-size:12px;color:var(--text3);">Venta ${v.id} · ${fmtDate(v.fecha)} · Período ${v.periodo}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="money" style="font-weight:700;font-size:16px;">${fmt$(cobradoV)} <span style="color:var(--text3);font-size:12px;">/ ${fmt$(totalV)}</span></div>
+              <div style="font-size:11px;color:var(--text3);">Saldo: ${fmt$(totalV-cobradoV)}</div>
+              <div style="margin-top:6px;display:flex;gap:4px;justify-content:flex-end;">
+                <button class="btn-ghost" style="padding:3px 7px;font-size:11px;" onclick="editarVenta('${v.id}','${clienteId}')">✏️ Editar</button>
+                <button class="btn-ghost" style="padding:3px 7px;font-size:11px;color:var(--red);" onclick="confirmarEliminarVenta('${v.id}','${clienteId}')">🗑️ Eliminar</button>
+              </div>
+            </div>
+          </div>
+          <div class="progress-bar" style="margin-bottom:16px;">
+            <div class="progress-fill ${pct>=100?'green':pct>50?'':'red'}" style="width:${pct}%"></div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+            ${cuotasConEst.map(c=>`
+              <div class="cuota-row ${esImpago(c.id)?'impago':''}">
+                ${badgeEstado(c.est.estado)}
+                <div class="cuota-concepto">${c.concepto}</div>
+                <div class="cuota-fecha">${fmtDate(c.vencimiento)}</div>
+                <div class="cuota-monto money">
+                  ${esImpago(c.id)
+                    ? fmt$(c.importe)+' <span style="color:var(--orange);font-size:11px;">impago</span>'
+                    : c.est.saldo>0
+                      ? fmt$(c.est.saldo)+' <span style="color:var(--text3);font-size:11px;">pendiente</span>'
+                      : fmt$(c.importe)+' <span style="color:var(--green);font-size:11px;">✓</span>'}
+                </div>
+                ${!esImpago(c.id)&&c.est.saldo>0
+                  ? `<button class="btn-ghost" onclick="cobroRapido('${c.id}','${clienteId}')">Cobrar</button>
+                     <button class="btn-impago" onclick="confirmarImpago('${c.id}','${c.concepto}','${clienteId}')">🚫 Impago</button>`
+                  : esImpago(c.id)
+                    ? `<button class="btn-ghost" onclick="revertirImpago('${c.id}');navigate('cliente-detalle','${clienteId}')">↩ Revertir</button>`
+                    : ''}
+              </div>`).join('')}
+          </div>
+        </div>`;
+    });
+  }
+
+  el.innerHTML=html;
+}
+
+// ============================================================
+// EDITAR / ELIMINAR VENTA
+// ============================================================
+function editarVenta(ventaId, clienteId) {
+  const v = ventas().find(x=>x.id===ventaId);
+  if (!v) return;
+  const costoEntry = costosCelular().find(c=>c.id_venta===ventaId);
+  openModal('Editar venta', `
+    <div class="form-group"><label>Equipo / modelo *</label><input id="ev-equipo" type="text" value="${v.equipo}"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Monto entrega ($) *</label><input id="ev-entrega" type="number" value="${v.entrega}"></div>
+      <div class="form-group"><label>Cantidad de cuotas *</label><input id="ev-cuotas" type="number" min="1" max="24" value="${v.n_cuotas}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Importe por cuota ($) *</label><input id="ev-importe-cuota" type="number" value="${v.imp_cuota}"></div>
+      <div class="form-group"><label>Período de cobro *</label>
+        <select id="ev-periodo">
+          <option value="1-10" ${v.periodo==='1-10'?'selected':''}>1–10 (vence día 10)</option>
+          <option value="15-25" ${v.periodo==='15-25'?'selected':''}>15–25 (vence día 25)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Fecha de venta</label><input id="ev-fecha" type="date" value="${v.fecha}"></div>
+      <div class="form-group"><label>💰 Costo del equipo ($)</label><input id="ev-costo" type="number" value="${costoEntry?costoEntry.costo:''}" placeholder="Ej: 850000"></div>
+    </div>
+    <div class="confirm-box" style="margin-bottom:16px;">
+      ⚠️ Si cambiás la cantidad de cuotas, los montos o la fecha, el plan de pagos se regenera. Los cobros e impagos ya cargados quedan asociados por número de cuota — revisá los montos después de guardar.
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="guardarEdicionVenta('${ventaId}','${clienteId}')">Guardar cambios</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    </div>
+  `);
+}
+
+function guardarEdicionVenta(ventaId, clienteId) {
+  const equipo    = $('ev-equipo').value.trim();
+  const entrega   = parseFloat($('ev-entrega').value);
+  const nCuotas   = parseInt($('ev-cuotas').value);
+  const impCuota  = parseFloat($('ev-importe-cuota').value);
+  const periodo   = $('ev-periodo').value;
+  const fecha     = $('ev-fecha').value;
+  if (!equipo||isNaN(entrega)||isNaN(nCuotas)||isNaN(impCuota)||!fecha) { toast('Completá los campos obligatorios','error'); return; }
+
+  const vts = ventas();
+  const v = vts.find(x=>x.id===ventaId);
+  if (!v) return;
+  v.equipo=equipo; v.entrega=entrega; v.n_cuotas=nCuotas; v.imp_cuota=impCuota; v.periodo=periodo; v.fecha=fecha;
+  saveVentas(vts);
+
+  // Actualizar costo del equipo
+  const costoVal = parseFloat($('ev-costo').value);
+  const costos = costosCelular();
+  const idxCosto = costos.findIndex(c=>c.id_venta===ventaId);
+  if (!isNaN(costoVal) && costoVal > 0) {
+    if (idxCosto>=0) costos[idxCosto].costo = costoVal; else costos.push({id_venta:ventaId, costo:costoVal});
+  } else if (idxCosto>=0) {
+    costos.splice(idxCosto,1);
+  }
+  saveCostosCelular(costos);
+
+  // Regenerar plan de pagos (mismos IDs de cuota, así los cobros/impagos existentes no se pierden)
+  const cl = clientes().find(c=>c.id===clienteId);
+  const nombre = cl ? cl.nombre : '';
+  const plan = planPagos().filter(p=>p.id_venta!==ventaId);
+  plan.push({id:ventaId+'-E',id_venta:ventaId,nombre,concepto:'Entrega',vencimiento:fecha,importe:entrega,periodo});
+  for (let i=1;i<=nCuotas;i++) plan.push({id:ventaId+'-'+i,id_venta:ventaId,nombre,concepto:'Cuota '+i,vencimiento:vencimientoCuota(fecha,i,periodo),importe:impCuota,periodo});
+  savePlan(plan);
+
+  closeModal();
+  toast('Venta actualizada correctamente');
+  renderClienteDetalle(clienteId);
+}
+
+function confirmarEliminarVenta(ventaId, clienteId) {
+  const v = ventas().find(x=>x.id===ventaId);
+  if (!v) return;
+  openModal('Eliminar venta', `
+    <div class="confirm-box">
+      ⚠️ Esto va a eliminar <strong>permanentemente</strong>:
+      <ul style="margin-top:8px;padding-left:18px;line-height:2">
+        <li>La venta y su plan de cuotas</li>
+        <li>Los cobros registrados sobre esas cuotas</li>
+        <li>Las marcas de impago asociadas</li>
+        <li>El costo del equipo cargado (si lo hay)</li>
+      </ul>
+      Usalo cuando se cancela la venta. Esta acción no se puede deshacer.
+    </div>
+    <div class="info-box" style="margin-bottom:20px;">
+      <div class="info-row"><span class="info-key">Equipo</span><span class="info-val">${v.equipo}</span></div>
+      <div class="info-row"><span class="info-key">Venta</span><span class="info-val">${v.id} · ${fmtDate(v.fecha)}</span></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="ejecutarEliminarVenta('${ventaId}','${clienteId}')">Sí, eliminar venta</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    </div>
+  `);
+}
+
+function ejecutarEliminarVenta(ventaId, clienteId) {
+  const cuotaIds = planPagos().filter(p=>p.id_venta===ventaId).map(p=>p.id);
+
+  saveVentas(ventas().filter(x=>x.id!==ventaId));
+  savePlan(planPagos().filter(p=>p.id_venta!==ventaId));
+  saveCostosCelular(costosCelular().filter(c=>c.id_venta!==ventaId));
+  saveCobros(cobros().filter(c=>!cuotaIds.includes(c.id_cuota)));
+  saveImpagos(impagos().filter(id=>!cuotaIds.includes(id)));
+
+  closeModal();
+  toast('Venta eliminada', 'error');
+  renderClienteDetalle(clienteId);
+}
+
+function cobroRapido(cuotaId,clienteId) {
+  navigate('registrar-cobro');
+  setTimeout(()=>{ seleccionarCliente(clienteId); setTimeout(()=>{ $('cobro-cuota').value=cuotaId; seleccionarCuota(); },120); },120);
+}
+
+// Override history.back para SPA
+window.addEventListener('popstate', ()=>{ navigate('clientes'); });
+
+// No seed data — starts clean.
+
+// ============================================================
+// PROFIT
+// ============================================================
+function renderProfit() {
+  const el = $('page-profit');
+  const costos = costosCelular();
+  const vts    = ventas();
+  const plan   = planPagos();
+
+  // Agrupar ventas por mes (mes de fecha de venta)
+  const porMes = {};
+  vts.forEach(v => {
+    const mes = v.fecha.slice(0,7); // YYYY-MM
+    if (!porMes[mes]) porMes[mes] = { ventas: [], ingresos: 0, costos: 0 };
+    porMes[mes].ventas.push(v);
+    // Ingresos proyectados = suma de todas las cuotas de esa venta
+    const cuotas = plan.filter(p => p.id_venta === v.id);
+    porMes[mes].ingresos += cuotas.reduce((s,c) => s + Number(c.importe), 0);
+    // Costo del equipo
+    const costoEntry = costos.find(c => c.id_venta === v.id);
+    porMes[mes].costos += costoEntry ? Number(costoEntry.costo) : 0;
+  });
+
+  const meses = Object.keys(porMes).sort().reverse();
+
+  // Totales globales
+  const totalIngresos = vts.reduce((s,v) => {
+    return s + plan.filter(p=>p.id_venta===v.id).reduce((a,c)=>a+Number(c.importe),0);
+  }, 0);
+  const totalCostos = costos.reduce((s,c) => s + Number(c.costo), 0);
+  const totalProfit = totalIngresos - totalCostos;
+
+  function fmtMes(ym) {
+    const [y,m] = ym.split('-');
+    const nombres = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return `${nombres[parseInt(m)]} ${y}`;
+  }
+
+  let tablaHtml = meses.length === 0
+    ? `<tr><td colspan="5" class="empty">Aún no hay ventas registradas con costos</td></tr>`
+    : meses.map(mes => {
+        const d = porMes[mes];
+        const profit = d.ingresos - d.costos;
+        const hasCosto = d.costos > 0;
+        return `<tr>
+          <td style="font-weight:600">${fmtMes(mes)}</td>
+          <td>${d.ventas.length} venta${d.ventas.length>1?'s':''}</td>
+          <td class="money">${hasCosto ? fmt$(d.costos) : '<span style="color:var(--text3)">Sin dato</span>'}</td>
+          <td class="money" style="color:var(--green)">${fmt$(d.ingresos)}</td>
+          <td class="money" style="font-weight:700;color:${profit>=0?'var(--green)':'var(--red)'}">${profit>=0?'+':''}${fmt$(profit)}</td>
+        </tr>`;
+      }).join('');
+
+  // Tabla de equipos individuales con costo
+  const equipoRows = vts.map(v => {
+    const costoEntry = costos.find(c => c.id_venta === v.id);
+    const costo = costoEntry ? Number(costoEntry.costo) : null;
+    const ingreso = plan.filter(p=>p.id_venta===v.id).reduce((s,c)=>s+Number(c.importe),0);
+    const profit = costo !== null ? ingreso - costo : null;
+    const cl = clientes().find(c=>c.id===v.id_cliente);
+    return { v, cl, costo, ingreso, profit };
+  }).sort((a,b)=> (b.profit??-Infinity) - (a.profit??-Infinity));
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">📊 Profit</div><div class="page-sub">Rentabilidad por mes y por equipo</div></div>
+    </div>
+
+    <div class="kpi-grid" style="margin-bottom:28px;">
+      <div class="kpi">
+        <div class="kpi-label">Ingresos proyectados</div>
+        <div class="kpi-value money">${fmt$(totalIngresos)}</div>
+        <div class="kpi-sub">Suma de todas las cuotas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Inversión total</div>
+        <div class="kpi-value warning money">${fmt$(totalCostos)}</div>
+        <div class="kpi-sub">Costo de equipos cargados</div>
+      </div>
+      <div class="kpi" style="border-color:${totalProfit>=0?'var(--green)':'var(--red)'}40">
+        <div class="kpi-label">Profit global 🚀</div>
+        <div class="kpi-value ${totalProfit>=0?'success':'danger'} money">${totalProfit>=0?'+':''}${fmt$(totalProfit)}</div>
+        <div class="kpi-sub">Proyectado (cobros + pendientes)</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">Por mes</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mes</th><th>Ventas</th><th>Inversión</th><th>Ingresos proyectados</th><th>Profit</th></tr></thead>
+        <tbody>${tablaHtml}</tbody>
+      </table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span class="section-title">Por equipo</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Equipo</th><th>Cliente</th><th>Fecha</th><th>Inversión</th><th>Ingresos proyectados</th><th>Profit</th></tr></thead>
+        <tbody>
+          ${equipoRows.length===0?`<tr><td colspan="6" class="empty">Sin ventas registradas</td></tr>`:
+            equipoRows.map(r=>`<tr>
+              <td class="td-name">${r.v.equipo}</td>
+              <td class="td-link" onclick="navigate('cliente-detalle','${r.v.id_cliente}')">${r.cl?r.cl.nombre:'—'}</td>
+              <td>${fmtDate(r.v.fecha)}</td>
+              <td class="money">${r.costo!==null ? fmt$(r.costo) : '<span style="color:var(--text3)">—</span>'}</td>
+              <td class="money" style="color:var(--green)">${fmt$(r.ingreso)}</td>
+              <td class="money" style="font-weight:700;color:${r.profit===null?'var(--text3)':r.profit>=0?'var(--green)':'var(--red)'}">
+                ${r.profit===null ? '<span style="color:var(--text3)">Sin costo</span>' : (r.profit>=0?'+':'')+fmt$(r.profit)}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" style="margin-top:20px;border-color:var(--accent-bg)">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;">ℹ️ ¿Cómo se calcula?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        El <strong style="color:var(--text)">Profit proyectado</strong> = suma de todas las cuotas de tus ventas (entrega + cuotas) − costo del equipo ingresado al registrar la venta.<br>
+        Para que aparezcan los costos, completá el campo <em>"Costo del equipo"</em> al crear una nueva venta.
+      </div>
+    </div>
+  `;
+}
+// ============================================================
+// BACKUP — exportar / importar
+// ============================================================
+const ALL_BACKUP_KEYS = ['clientes','ventas','plan_pagos','cobros','impagos','counters','costos_celular'];
+let _pendingRestore = null;
+
+function exportarBackup() {
+  const data = {};
+  ALL_BACKUP_KEYS.forEach(k => {
+    const raw = localStorage.getItem('pf_' + k);
+    data[k] = raw ? JSON.parse(raw) : (k === 'counters' ? {} : []);
+  });
+  data._meta = { app: 'Parana Financiados', exportado: new Date().toISOString() };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `parana-financiados-backup-${today()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  localStorage.setItem('pf_last_backup', new Date().toISOString());
+  toast('Backup descargado correctamente');
+  if (currentPage === 'backup') renderBackup();
+}
+
+function importarBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.target.result);
+    } catch (err) {
+      toast('No se pudo leer el archivo. ¿Es un backup válido?', 'error');
+      return;
+    }
+    const valido = ALL_BACKUP_KEYS.every(k => k in data);
+    if (!valido) { toast('El archivo no parece un backup válido de Paraná Financiados', 'error'); return; }
+
+    _pendingRestore = data;
+    const fechaBackup = data._meta && data._meta.exportado ? fmtDate(data._meta.exportado.split('T')[0]) : 'fecha desconocida';
+    openModal('Restaurar backup', `
+      <div class="confirm-box">
+        ⚠️ Esto va a <strong>reemplazar todos los datos actuales</strong> (clientes, ventas, cuotas, cobros, impagos) por los del backup.
+        <br><br>Backup del: <strong>${fechaBackup}</strong>
+        <br><br>Esta acción no se puede deshacer. Si tenés datos cargados ahora que no respaldaste, se van a perder.
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-danger" onclick="confirmarRestaurar()">Sí, restaurar backup</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      </div>
+    `);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function confirmarRestaurar() {
+  if (!_pendingRestore) return;
+  ALL_BACKUP_KEYS.forEach(k => {
+    localStorage.setItem('pf_' + k, JSON.stringify(_pendingRestore[k]));
+  });
+  _pendingRestore = null;
+  closeModal();
+  toast('Backup restaurado. Recargando...');
+  setTimeout(() => location.reload(), 900);
+}
+
+function renderBackup() {
+  const el = $('page-backup');
+  const lastBackup = localStorage.getItem('pf_last_backup');
+  const dias = lastBackup ? Math.round((Date.now() - new Date(lastBackup).getTime()) / 86400000) : null;
+
+  const totalClientes = clientes().length;
+  const totalVentas   = ventas().length;
+  const totalCobros   = cobros().length;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Copia de seguridad</div><div class="page-sub">Exportá tus datos o restaurá un backup anterior</div></div>
+    </div>
+
+    ${dias === null
+      ? `<div class="alert alert-warning">⚠️ Todavía no hiciste ninguna copia de seguridad. Te recomendamos descargar una ahora.</div>`
+      : dias >= 7
+        ? `<div class="alert alert-orange">⏰ Tu último backup fue hace ${dias} día${dias!==1?'s':''}. Te conviene descargar uno nuevo.</div>`
+        : `<div class="alert" style="background:var(--green-bg);color:var(--green);border:1px solid #0a3d1a;">✅ Último backup: hace ${dias} día${dias!==1?'s':''}.</div>`
+    }
+
+    <div class="card" style="max-width:620px;margin-bottom:20px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px;">⬇️ Descargar backup</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+        Descarga un archivo <code>.json</code> con todos tus datos: ${totalClientes} cliente${totalClientes!==1?'s':''}, ${totalVentas} venta${totalVentas!==1?'s':''} y ${totalCobros} cobro${totalCobros!==1?'s':''} registrados.
+        Guardalo en Google Drive, tu mail, o donde prefieras, para no perder nada si se borra el navegador.
+      </div>
+      <button class="btn btn-primary" onclick="exportarBackup()">⬇️ Descargar backup ahora</button>
+    </div>
+
+    <div class="card" style="max-width:620px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px;color:var(--orange);">⬆️ Restaurar backup</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+        Subí un archivo <code>.json</code> descargado anteriormente para restaurar todos los datos.
+        <strong style="color:var(--red)">Esto reemplaza los datos actuales.</strong>
+      </div>
+      <input type="file" id="backup-file-input" accept=".json,application/json" onchange="importarBackup(event)"
+        style="padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);width:100%;">
+    </div>
+
+    <div class="card" style="max-width:620px;margin-top:20px;border-color:var(--accent-bg)">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;">ℹ️ ¿Cómo funciona?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        Esta app guarda todo en tu navegador (no en internet, no en ningún servidor). Eso es rápido y privado, pero significa que si borrás el caché del navegador o cambiás de dispositivo, los datos no viajan solos.
+        <br><br>
+        Por eso conviene descargar un backup <strong>después de cargar ventas o cobros importantes</strong>, y guardarlo en un lugar seguro (Drive, mail, pendrive). La app te va a avisar en el Dashboard si pasó más de una semana sin backup.
+      </div>
+    </div>
+  `;
+}
+
+navigate('dashboard');
+</script>
+</body>
+</html>
